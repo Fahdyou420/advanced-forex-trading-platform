@@ -1,0 +1,79 @@
+# render.yaml - Render deployment configuration
+services:
+  # Backend API Service
+  - type: web
+    name: forex-trading-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: EXCHANGERATE_API_KEY
+        value: f2dfe9706f3c311136dd15b4
+      - key: API_SECRET
+        generateValue: true
+      - key: PAPER_MODE
+        value: true
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    healthCheckPath: /health
+    autoDeploy: false
+
+  # Frontend Service  
+  - type: web
+    name: forex-trading-frontend
+    runtime: node
+    plan: free
+    rootDir: ./frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: forex-trading-backend
+          property: host
+      - key: REACT_APP_WS_URL
+        fromService:
+          type: web
+          name: forex-trading-backend
+          property: host
+      - key: NODE_VERSION
+        value: 18
+    healthCheckPath: /
+    autoDeploy: false
+
+  # N8N Automation Service
+  - type: web
+    name: forex-n8n-automation
+    runtime: docker
+    plan: free
+    repo: https://github.com/n8n-io/n8n
+    dockerCommand: n8n start
+    envVars:
+      - key: N8N_BASIC_AUTH_ACTIVE
+        value: true
+      - key: N8N_BASIC_AUTH_USER
+        value: admin
+      - key: N8N_BASIC_AUTH_PASSWORD
+        generateValue: true
+      - key: WEBHOOK_URL
+        fromService:
+          type: web
+          name: forex-n8n-automation
+          property: host
+      - key: TRADING_API_URL
+        fromService:
+          type: web
+          name: forex-trading-backend
+          property: host
+      - key: N8N_HOST
+        value: 0.0.0.0
+      - key: N8N_PORT
+        value: $PORT
+    healthCheckPath: /healthz
+    autoDeploy: false
+
+databases:
+  # SQLite database will be file-based in the backend service
+  # No separate database service needed for this setup
