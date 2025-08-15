@@ -15,7 +15,7 @@ services:
       - key: PAPER_MODE
         value: true
       - key: PYTHON_VERSION
-        value: 3.11.0    # ADD THIS LINE OR UPDATE IT
+        value: 3.11.8    # ADD THIS LINE OR UPDATE IT3.11.8
     healthCheckPath: /health
     autoDeploy: false
 
